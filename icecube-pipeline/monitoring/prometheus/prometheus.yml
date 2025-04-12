@@ -1,0 +1,7 @@
+# Prometheus configuration for scraping metrics from ICECUBE services.
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: 'icecube'
+    static_configs:
+      - targets: ['localhost:5000']
