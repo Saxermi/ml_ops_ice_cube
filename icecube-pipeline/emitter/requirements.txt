@@ -1,0 +1,6 @@
+pandas
+pyarrow           
+redis
+watchdog          
+PyYAML            
+pymongo

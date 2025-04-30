@@ -1,2 +1,30 @@
 # Docker Compose configuration for the ICECUBE pipeline.
 # Define your services here.
+
+services:
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+
+  emitter:
+    build: ./emitter
+    volumes:
+      - ../input:/app/input
+      - ../archive:/app/archive
+    depends_on:
+      - redis
+      - mongo
+  redis_test:
+    build: ./emitter
+    command: python redis_test.py
+    volumes:
+      - ./emitter:/app
+    depends_on:
+      - redis
+

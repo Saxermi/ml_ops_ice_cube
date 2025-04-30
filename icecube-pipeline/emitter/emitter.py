@@ -36,12 +36,16 @@ import redis
 from pymongo import MongoClient
 import pickle
 
-INPUT_DIR = "../../input"
-ARCHIVE_DIR = "../../archive"
+INPUT_DIR = "/app/input"
+ARCHIVE_DIR = "/app/archive"
+
+print("Emitter gestartet", flush=True)
+print(f"Watching folder: {INPUT_DIR}", flush=True)
+
 
 # Setup Redis and MongoDB connections
-r = redis.Redis(host='localhost', port=6379, db=0)
-mongo = MongoClient("mongodb://localhost:27017/")
+r = redis.Redis(host='redis', port=6379)
+mongo = MongoClient("mongodb://mongo:27017/")
 mdb = mongo["icecube_db"]
 events_collection = mdb["events"]
 
@@ -82,14 +86,22 @@ def process_new_file(filepath):
 
     print(f"Metadata saved with _id: {doc_id}")
 
+    print("Loaded dataframe shape:", df.shape)
+    print("Index:", df.index.name)
+    print(df.head())
+
     try:
+        print("Starting Redis push...")
         batches = extract_batches(df)
         event_ids = []
+
+        print(f"Extracted {len(batches)} batches")
 
         for batch in batches:
             r.lpush("event_queue", pickle.dumps(batch))
             event_ids.append(batch["event_id"])
-            print(f"Pushed batch for event_id: {batch['event_id']}")
+            #print(f"Pushed batch for event_id: {batch['event_id']}")
+        print("All batches pushed to Redis")
 
         # Update MongoDB to mark as pushed
         events_collection.update_one(
@@ -106,7 +118,7 @@ def process_new_file(filepath):
     os.remove(filepath)
 
 def main_loop():
-    print("Watching folder:", INPUT_DIR)
+    print("Watching folder:", INPUT_DIR, flush=True)
     while True:
         files = [f for f in os.listdir(INPUT_DIR) if f.endswith(".parquet")]
         for fname in files:
