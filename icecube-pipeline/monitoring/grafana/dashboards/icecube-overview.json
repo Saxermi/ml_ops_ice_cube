@@ -1,0 +1,73 @@
+{
+  "id": null,
+  "title": "IceCube Heartbeat Monitor",
+  "timezone": "browser",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Latest Heartbeat Count",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "emitter_heartbeat_total",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Heartbeat Over Time",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "emitter_heartbeat_total",
+          "interval": "",
+          "legendFormat": "Heartbeat",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 6, "y": 0, "w": 12, "h": 9 }
+    }
+  ],
+  "schemaVersion": 37,
+  "version": 1,
+  "refresh": "5s",
+  "uid": "icecube-heartbeat"
+}

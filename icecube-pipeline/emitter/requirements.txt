@@ -4,3 +4,4 @@ redis
 watchdog          
 PyYAML            
 pymongo
+prometheus_client

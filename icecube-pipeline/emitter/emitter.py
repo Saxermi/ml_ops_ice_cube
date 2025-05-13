@@ -35,6 +35,7 @@ import pandas as pd
 import redis
 from pymongo import MongoClient
 import pickle
+from prometheus_client import start_http_server, Counter
 
 INPUT_DIR = "/app/input"
 ARCHIVE_DIR = "/app/archive"
@@ -42,12 +43,15 @@ ARCHIVE_DIR = "/app/archive"
 print("Emitter gestartet", flush=True)
 print(f"Watching folder: {INPUT_DIR}", flush=True)
 
-
 # Setup Redis and MongoDB connections
 r = redis.Redis(host='redis', port=6379)
 mongo = MongoClient("mongodb://mongo:27017/")
 mdb = mongo["icecube_db"]
 events_collection = mdb["events"]
+
+# Prometheus: Start metrics endpoint and define heartbeat counter
+start_http_server(8000)  # This exposes metrics at http://localhost:8000/metrics
+heartbeat_counter = Counter('emitter_heartbeat_total', 'Number of heartbeats sent by the emitter')
 
 def archive_file(file_path):
     ts = int(time.time())
@@ -120,6 +124,7 @@ def process_new_file(filepath):
 def main_loop():
     print("Watching folder:", INPUT_DIR, flush=True)
     while True:
+        heartbeat_counter.inc()
         files = [f for f in os.listdir(INPUT_DIR) if f.endswith(".parquet")]
         for fname in files:
             full_path = os.path.join(INPUT_DIR, fname)

@@ -1,30 +1,58 @@
-# Docker Compose configuration for the ICECUBE pipeline.
-# Define your services here.
+version: "3.8"
 
 services:
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
-
-  mongo:
-    image: mongo
-    ports:
-      - "27017:27017"
-
-  emitter:
+  cube:
     build: ./emitter
+    container_name: cube
+    ports:
+      - "8000:8000"         # Expose metrics endpoint for Prometheus
     volumes:
-      - ../input:/app/input
-      - ../archive:/app/archive
+      - ./input:/app/input
+      - ./archive:/app/archive
+    networks:
+      - monitor-net
     depends_on:
       - redis
       - mongo
-  redis_test:
-    build: ./emitter
-    command: python redis_test.py
-    volumes:
-      - ./emitter:/app
-    depends_on:
-      - redis
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - monitor-net
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    networks:
+      - monitor-net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitor-net
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - monitor-net
+
+networks:
+  monitor-net:
+    driver: bridge
