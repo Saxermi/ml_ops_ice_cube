@@ -43,6 +43,7 @@ services:
 
   grafana:
     image: grafana/grafana
+    container_name: grafana
     ports:
       - "3000:3000"
     volumes:
@@ -52,6 +53,37 @@ services:
       - prometheus
     networks:
       - monitor-net
+
+  model-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: model-server
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+    networks:
+      - monitor-net
+    depends_on:
+      - redis
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: consumer
+    command: python consumer.py
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - MODEL_SERVER_URL=http://model-server:5000/predict
+      - EVENT_QUEUE=events
+      - POLL_INTERVAL=0.5
+    networks:
+      - monitor-net
+    depends_on:
+      - redis
+      - model-server
 
 networks:
   monitor-net:
