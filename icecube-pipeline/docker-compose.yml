@@ -5,7 +5,7 @@ services:
     build: ./emitter
     container_name: cube
     ports:
-      - "8000:8000"         # Expose metrics endpoint for Prometheus
+      - "8000:8000"                                  # Prometheus-Metrics
     volumes:
       - ./input:/app/input
       - ./archive:/app/archive
@@ -56,8 +56,8 @@ services:
 
   model-server:
     build:
-    context: ./model_service      # statt "."
-    dockerfile: Dockerfile
+      context: ./model_service
+      dockerfile: Dockerfile
     container_name: model-server
     ports:
       - "5000:5000"
@@ -70,14 +70,14 @@ services:
 
   consumer:
     build:
-    context: ./consumer
-    dockerfile: Dockerfile
+      context: ./consumer
+      dockerfile: Dockerfile
     command: ["python", "-u", "consumer.py"]
     environment:
       - REDIS_URL=redis://redis:6379/0
       - MODEL_SERVER_URL=http://model-server:5000/predict
-      - EVENT_QUEUE=events
-      - POLL_INTERVAL="0.5"
+      - EVENT_QUEUE=event_queue          # vereinheitlicht
+      - POLL_INTERVAL=0.5
     networks:
       - monitor-net
     depends_on:
