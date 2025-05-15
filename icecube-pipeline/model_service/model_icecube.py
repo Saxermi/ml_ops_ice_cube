@@ -1,4 +1,4 @@
-#%%
+# %%
 import math, os, glob, functools, random, time, json
 from pathlib import Path
 import numpy as np
@@ -11,35 +11,38 @@ from torch.nn.utils.rnn import pad_sequence
 from torch.cuda.amp import autocast, GradScaler
 
 SEED = 42
-random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
-torch.backends.cudnn.benchmark = True   # sp<<eed
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+torch.backends.cudnn.benchmark = True  # sp<<eed
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Running on: {DEVICE}")
 
 # data
 TRAIN_DIR = "train"
-VAL_DIR   = "val"          # optional – can point to a split of train_meta
-GEOM_CSV  = "sensor_geometry.csv"
+VAL_DIR = "val"  # optional – can point to a split of train_meta
+GEOM_CSV = "sensor_geometry.csv"
 
-MAX_HITS      = 2048       # down-sample hits to keep memory in check
-BATCH_SIZE    = 6
-NUM_WORKERS   = 4
+MAX_HITS = 2048  # down-sample hits to keep memory in check
+BATCH_SIZE = 6
+NUM_WORKERS = 4
 
 # model
-D_MODEL       = 128
-DEPTH         = 6
-N_HEADS       = 8
+D_MODEL = 128
+DEPTH = 6
+N_HEADS = 8
 
 # training
-LR            = 1e-4
-EPOCHS        = 150
-WEIGHT_DECAY  = 1e-2
-GRAD_CLIP_NORM= 1.0
+LR = 1e-4
+EPOCHS = 150
+WEIGHT_DECAY = 1e-2
+GRAD_CLIP_NORM = 1.0
 
 FEAT_DIM = 6  # ←  time, charge, aux, x, y, z
 
-#%%_calss_IceCubeDataset
+# %%_calss_IceCubeDataset
+
 
 class IceCubeDataset(Dataset):
     """
@@ -112,7 +115,9 @@ class IceCubeDataset(Dataset):
         else:
             return feats, torch.zeros(3)
 
-#%%_class_SequencePadCollate
+
+# %%_class_SequencePadCollate
+
 
 class SequencePadCollate:
     """Pads variable-length sequences; returns x, mask, y."""
@@ -128,7 +133,9 @@ class SequencePadCollate:
         y = torch.stack(ys).to(self.device)
         return xpad, mask, y
 
-#%%_class_HitEncoder
+
+# %%_class_HitEncoder
+
 
 class HitEncoder(nn.Module):
     """Project 6-dim hit features to the model width."""
@@ -141,7 +148,9 @@ class HitEncoder(nn.Module):
     def forward(self, x):
         return self.act(self.proj(x))
 
-#%%_class_IceFormer
+
+# %%_class_IceFormer
+
 
 class IceFormer(nn.Module):
     def __init__(self, d_model=D_MODEL, depth=DEPTH, nhead=N_HEADS):
@@ -170,7 +179,8 @@ class IceFormer(nn.Module):
         v = x[:, 0]  # query token
         v = v / v.norm(dim=-1, keepdim=True)  # unit
         return self.out(v)
-    
+
+
 def angular_loss(pred, tgt):
     cos = (pred * tgt).sum(-1).clamp(-1, 1)
     return torch.acos(cos).mean()
@@ -246,7 +256,9 @@ def fit(model, train_dl, val_dl, epochs):
             f"  ({dur/60:.1f} min){flag}"
         )
 
-#%%_class_IceCubeNet
+
+# %%_class_IceCubeNet
+
 
 class IceCubeNet(nn.Module):
     def __init__(self, d_model=D_MODEL, depth=DEPTH, nhead=N_HEADS):
@@ -258,7 +270,8 @@ class IceCubeNet(nn.Module):
         x = self.feat(x)
         assert x.size(-1) == D_MODEL, "HitEncoder output size mismatch"
         return self.backbone(x, mask)
-    
+
+
 # debug: check shapes
 dummy_x = torch.randn(2, 10, FEAT_DIM).to(DEVICE)  # (B=2, L=10, 6)
 dummy_mask = torch.zeros(2, 10, dtype=torch.bool).to(DEVICE)
@@ -272,7 +285,8 @@ model = IceCubeNet().to(DEVICE)
 fit(model, train_dl, val_dl, EPOCHS)
 
 
-#%%_INFERENCE
+# %%_INFERENCE
+
 
 def vec2angles(vec):
     x, y, z = vec.T

@@ -19,7 +19,7 @@ import time
 from pymongo import MongoClient
 
 ARCHIVE_DIR = "../../archive"
-r = redis.Redis(host='localhost', port=6379, db=0)
+r = redis.Redis(host="localhost", port=6379, db=0)
 mongo = MongoClient("mongodb://localhost:27017/")
 mdb = mongo["icecube_db"]
 events_collection = mdb["events"]
@@ -48,18 +48,20 @@ for doc in docs:
         for event_id, group in grouped:
             batch = {
                 "event_id": event_id,
-                "data": group.reset_index(drop=True).to_dict(orient="records")
+                "data": group.reset_index(drop=True).to_dict(orient="records"),
             }
             r.lpush("event_queue", pickle.dumps(batch))
             batches.append(event_id)
 
         events_collection.update_one(
             {"_id": doc["_id"]},
-            {"$set": {
-                "batches_pushed": True,
-                "pushed_at": time.time(),
-                "event_ids": batches
-            }}
+            {
+                "$set": {
+                    "batches_pushed": True,
+                    "pushed_at": time.time(),
+                    "event_ids": batches,
+                }
+            },
         )
         print(f"Re-pushed and updated: {fname}")
         count += 1
