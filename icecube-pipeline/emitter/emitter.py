@@ -3,7 +3,7 @@
 Emitter service implementation.
 - Batches and serializes events from the raw IceCube dataset.
 - Pushes the serialized batches to a Redis queue.
-- #TODO: Sends periodic heartbeats. 
+- #TODO: Sends periodic heartbeats.
 
 Functionality:
 -------------
@@ -44,14 +44,17 @@ print("Emitter gestartet", flush=True)
 print(f"Watching folder: {INPUT_DIR}", flush=True)
 
 # Setup Redis and MongoDB connections
-r = redis.Redis(host='redis', port=6379)
+r = redis.Redis(host="redis", port=6379)
 mongo = MongoClient("mongodb://mongo:27017/")
 mdb = mongo["icecube_db"]
 events_collection = mdb["events"]
 
 # Prometheus: Start metrics endpoint and define heartbeat counter
 start_http_server(8000)  # This exposes metrics at http://localhost:8000/metrics
-heartbeat_counter = Counter('emitter_heartbeat_total', 'Number of heartbeats sent by the emitter')
+heartbeat_counter = Counter(
+    "emitter_heartbeat_total", "Number of heartbeats sent by the emitter"
+)
+
 
 def archive_file(file_path):
     ts = int(time.time())
@@ -61,16 +64,18 @@ def archive_file(file_path):
     shutil.copy(file_path, dest_path)
     return dest_path, ts
 
+
 def extract_batches(df):
     batches = []
     grouped = df.groupby(df.index)
     for event_id, group in grouped:
         batch = {
             "event_id": event_id,
-            "data": group.reset_index(drop=True).to_dict(orient="records")
+            "data": group.reset_index(drop=True).to_dict(orient="records"),
         }
         batches.append(batch)
     return batches
+
 
 def process_new_file(filepath):
     archived_path, ts = archive_file(filepath)
@@ -83,7 +88,7 @@ def process_new_file(filepath):
         "archived_file": os.path.basename(archived_path),
         "num_rows": len(df),
         "timestamp": ts,
-        "batches_pushed": False
+        "batches_pushed": False,
     }
     result = events_collection.insert_one(metadata)
     doc_id = result.inserted_id
@@ -104,22 +109,25 @@ def process_new_file(filepath):
         for batch in batches:
             r.lpush("event_queue", pickle.dumps(batch))
             event_ids.append(batch["event_id"])
-            #print(f"Pushed batch for event_id: {batch['event_id']}")
+            # print(f"Pushed batch for event_id: {batch['event_id']}")
         print("All batches pushed to Redis")
 
         # Update MongoDB to mark as pushed
         events_collection.update_one(
             {"_id": doc_id},
-            {"$set": {
-                "batches_pushed": True,
-                "pushed_at": time.time(),
-                "event_ids": event_ids
-            }}
+            {
+                "$set": {
+                    "batches_pushed": True,
+                    "pushed_at": time.time(),
+                    "event_ids": event_ids,
+                }
+            },
         )
     except Exception as e:
         print(f"Error while pushing to Redis: {e}")
 
     os.remove(filepath)
+
 
 def main_loop():
     print("Watching folder:", INPUT_DIR, flush=True)
@@ -130,6 +138,7 @@ def main_loop():
             full_path = os.path.join(INPUT_DIR, fname)
             process_new_file(full_path)
         time.sleep(5)
+
 
 if __name__ == "__main__":
     main_loop()

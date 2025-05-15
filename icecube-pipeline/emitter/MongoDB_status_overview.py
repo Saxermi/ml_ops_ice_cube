@@ -19,7 +19,9 @@ print()
 # List of files not pushed
 if not_pushed > 0:
     print("Files not yet pushed:")
-    for doc in collection.find({"batches_pushed": False}, {"archived_file": 1, "_id": 0}):
+    for doc in collection.find(
+        {"batches_pushed": False}, {"archived_file": 1, "_id": 0}
+    ):
         print(f"  - {doc['archived_file']}")
     print()
 else:

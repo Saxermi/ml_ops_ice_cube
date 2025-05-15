@@ -8,16 +8,13 @@ import redis
 import requests
 
 # ——— Configuration via env vars ——————————————————————
-REDIS_URL         = os.getenv("REDIS_URL", "redis://redis:6379/0")
-MODEL_SERVER_URL  = os.getenv("MODEL_SERVER_URL", "http://model-server:5000/predict")
-EVENT_QUEUE       = os.getenv("EVENT_QUEUE", "events")
-POLL_INTERVAL     = float(os.getenv("POLL_INTERVAL", "0.5"))  # seconds
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
+MODEL_SERVER_URL = os.getenv("MODEL_SERVER_URL", "http://model-server:5000/predict")
+EVENT_QUEUE = os.getenv("EVENT_QUEUE", "events")
+POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))  # seconds
 
 # ——— Setup logging & Redis client ————————————————
-logging.basicConfig(
-    format="%(asctime)s %(levelname)s: %(message)s",
-    level=logging.INFO
-)
+logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO)
 r = redis.from_url(REDIS_URL)
 
 
@@ -44,8 +41,12 @@ def process_event(raw):
         resp = requests.post(MODEL_SERVER_URL, json=payload, timeout=10)
         resp.raise_for_status()
         result = resp.json()
-        logging.info("Result for %s → azimuth=%.3f, zenith=%.3f",
-                     event_id, result["azimuth"], result["zenith"])
+        logging.info(
+            "Result for %s → azimuth=%.3f, zenith=%.3f",
+            event_id,
+            result["azimuth"],
+            result["zenith"],
+        )
     except Exception as e:
         logging.error("Error processing %s: %s", event_id, e)
 
