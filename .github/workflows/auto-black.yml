@@ -33,7 +33,8 @@ jobs:
       - name: Commit & push formatted code
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: style: apply automatic Black formatting
-          file_pattern: '**/*.py'
-          author_name: github-actions
-          author_email: github-actions@github.com
+          commit_message: "style: apply automatic Black formatting"
+          file_pattern: "**/*.py"
+          author_name: "github-actions"
+          author_email: "github-actions@github.com"
+
