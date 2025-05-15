@@ -1,0 +1,39 @@
+name: Auto-Format with Black
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Black
+        run: pip install black
+
+      - name: Run Black formatter
+        run: black .
+
+      - name: Commit & push formatted code
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: style: apply automatic Black formatting
+          file_pattern: '**/*.py'
+          author_name: github-actions
+          author_email: github-actions@github.com
