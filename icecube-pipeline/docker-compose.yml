@@ -56,8 +56,8 @@ services:
 
   model-server:
     build:
-      context: .
-      dockerfile: Dockerfile
+    context: ./model_service      # statt "."
+    dockerfile: Dockerfile
     container_name: model-server
     ports:
       - "5000:5000"
@@ -70,15 +70,14 @@ services:
 
   consumer:
     build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: consumer
-    command: python consumer.py
+    context: ./consumer
+    dockerfile: Dockerfile
+    command: ["python", "-u", "consumer.py"]
     environment:
       - REDIS_URL=redis://redis:6379/0
       - MODEL_SERVER_URL=http://model-server:5000/predict
       - EVENT_QUEUE=events
-      - POLL_INTERVAL=0.5
+      - POLL_INTERVAL="0.5"
     networks:
       - monitor-net
     depends_on:
