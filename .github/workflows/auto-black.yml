@@ -1,22 +1,26 @@
 name: Auto-Format with Black
 
+# 1) Schreibzugriff für push() zulassen
+permissions:
+  contents: write
+
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [ main, develop ]
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
 
 jobs:
   black:
     runs-on: ubuntu-latest
+    # verhindert Endlosschleife durch eigene Commits
     if: ${{ github.actor != 'github-actions[bot]' }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          # Token mit Schreibrechten wird automatisch per `permissions` freigegeben
           persist-credentials: true
 
       - name: Setup Python
@@ -35,6 +39,7 @@ jobs:
         with:
           commit_message: "style: apply automatic Black formatting"
           file_pattern: "**/*.py"
-          author_name: "github-actions"
-          author_email: "github-actions@github.com"
+          # korrekte Inputs für Git-Nutzer
+          commit_user_name: github-actions
+          commit_user_email: github-actions@users.noreply.github.com
 
