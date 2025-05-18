@@ -35,6 +35,7 @@ batches_counter = Counter("consumer_batches_total", "Number of event batches pro
 azimuth_gauge = Gauge("last_prediction_azimuth", "Latest predicted azimuth")
 zenith_gauge = Gauge("last_prediction_zenith", "Latest predicted zenith")
 
+
 def process_event(raw):
     """
     raw is the serialized dict pushed into Redis:
@@ -87,6 +88,7 @@ def process_event(raw):
 
     except Exception as e:
         logging.error("Error processing %s: %s", event_id, e)
+
 
 def main():
     logging.info("Consumer started, connecting to %s", REDIS_URL)
