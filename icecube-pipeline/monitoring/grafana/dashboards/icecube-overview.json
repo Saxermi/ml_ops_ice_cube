@@ -2,26 +2,25 @@
   "id": null,
   "title": "IceCube Heartbeat Monitor",
   "timezone": "browser",
+  "schemaVersion": 37,
+  "version": 1,
+  "refresh": "5s",
+  "uid": "icecube-heartbeat",
   "panels": [
     {
       "type": "stat",
-      "title": "Latest Heartbeat Count",
+      "title": "Latest Emitter Heartbeat Count",
       "datasource": "Prometheus",
       "targets": [
         {
           "expr": "emitter_heartbeat_total",
-          "interval": "",
-          "legendFormat": "",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "mappings": [],
+          "color": { "mode": "palette-classic" },
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -37,37 +36,137 @@
     },
     {
       "type": "timeseries",
-      "title": "Heartbeat Over Time",
+      "title": "Emitter Heartbeat Over Time",
       "datasource": "Prometheus",
       "targets": [
         {
           "expr": "emitter_heartbeat_total",
-          "interval": "",
-          "legendFormat": "Heartbeat",
+          "refId": "A",
+          "legendFormat": "Emitter"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 6, "y": 0, "w": 12, "h": 9 }
+    },
+    {
+      "type": "stat",
+      "title": "Latest Consumer Heartbeat Count",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "consumer_heartbeat_total",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "none",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "mappings": [],
+          "color": { "mode": "palette-classic" },
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 1000 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": { "x": 6, "y": 0, "w": 12, "h": 9 }
+      "gridPos": { "x": 0, "y": 5, "w": 6, "h": 5 }
+    },
+    {
+      "type": "stat",
+      "title": "Latest Model Heartbeat Count",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "model_heartbeat_total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": { "mode": "palette-classic" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 100 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 0, "y": 10, "w": 6, "h": 5 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumer Throughput Over Time",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "consumer_batches_total",
+          "refId": "A",
+          "legendFormat": "Batches"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 6, "y": 9, "w": 12, "h": 9 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Model Inference Count Over Time",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "model_inference_total",
+          "refId": "A",
+          "legendFormat": "Inferences"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 6, "y": 18, "w": 12, "h": 9 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Model Inference Latency (Seconds)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(inference_latency_seconds_sum[1m]) / rate(inference_latency_seconds_count[1m])",
+          "refId": "A",
+          "legendFormat": "Avg Latency (1m)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 6, "y": 27, "w": 12, "h": 9 }
     }
-  ],
-  "schemaVersion": 37,
-  "version": 1,
-  "refresh": "5s",
-  "uid": "icecube-heartbeat"
+  ]
 }

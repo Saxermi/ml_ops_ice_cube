@@ -5,3 +5,4 @@ numpy==1.26.2
 pandas==2.1.4
 pyarrow==14.0.1
 torch==2.7.0
+prometheus_client

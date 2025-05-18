@@ -61,6 +61,7 @@ services:
     container_name: model-server
     ports:
       - "5000:5000"
+      - "8002:8002"
     environment:
       - PORT=5000
     networks:
@@ -78,6 +79,8 @@ services:
       - MODEL_SERVER_URL=http://model-server:5000/predict
       - EVENT_QUEUE=event_queue          # vereinheitlicht
       - POLL_INTERVAL=0.5
+    ports:
+      - "8001:8001"
     networks:
       - monitor-net
     depends_on:

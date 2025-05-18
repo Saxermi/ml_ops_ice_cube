@@ -1,0 +1,80 @@
+apiVersion: 1
+
+groups:
+  - name: icecube-alerts
+    folder: ICECUBE
+    interval: 30s
+    rules:
+      - uid: emitter-down
+        title: "ALERT: Emitter Down"
+        condition: A
+        for: 1m
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(emitter_heartbeat_total[1m])
+              refId: A
+        annotations:
+          summary: "Emitter has stopped sending heartbeats"
+        labels:
+          severity: critical
+
+      - uid: consumer-down
+        title: "ALERT: Consumer Down"
+        condition: A
+        for: 1m
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(consumer_heartbeat_total[1m])
+              refId: A
+        annotations:
+          summary: "Consumer has stopped sending heartbeats"
+        labels:
+          severity: critical
+
+      - uid: model-down
+        title: "ALERT: Model Down"
+        condition: A
+        for: 1m
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(model_heartbeat_total[1m])
+              refId: A
+        annotations:
+          summary: "Model has stopped sending heartbeats"
+        labels:
+          severity: critical
+
+      - uid: high-inference-latency
+        title: "ALERT: High Inference Latency"
+        condition: A
+        for: 1m
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(inference_latency_seconds_sum[1m]) / rate(inference_latency_seconds_count[1m])
+              refId: A
+        annotations:
+          summary: "Inference latency is too high"
+        labels:
+          severity: warning
+
+

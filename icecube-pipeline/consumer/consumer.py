@@ -3,9 +3,10 @@ import os
 import time
 import json
 import logging
-
+import pickle
 import redis
 import requests
+from prometheus_client import start_http_server, Counter
 
 # ——— Configuration via env vars ——————————————————————
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
@@ -17,6 +18,12 @@ POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))  # seconds
 logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO)
 r = redis.from_url(REDIS_URL)
 
+# Start metrics server on port 8001
+start_http_server(8001)
+
+# Define Prometheus metrics
+heartbeat_counter = Counter("consumer_heartbeat_total", "Heartbeat from consumer")
+batches_counter = Counter("consumer_batches_total", "Number of event batches processed")
 
 def process_event(raw):
     """
@@ -30,10 +37,11 @@ def process_event(raw):
       }
     """
     try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
-        logging.error("Malformed event, skipping: %r", raw)
-        return
+        payload = pickle.loads(raw)
+    except (pickle.UnpicklingError, Exception) as e:
+            logging.error("Failed to unpickle event: %s", e)
+            return
+
 
     event_id = payload.get("event_id", "<no-id>")
     logging.info("Sending event %s to model server", event_id)
@@ -54,12 +62,14 @@ def process_event(raw):
 def main():
     logging.info("Consumer started, connecting to %s", REDIS_URL)
     while True:
+        heartbeat_counter.inc()
         # blocking pop: wait up to 1 second for an event
         item = r.blpop(EVENT_QUEUE, timeout=1)
         if item:
             # item is (queue_name, raw_data)
             _, raw = item
             process_event(raw)
+            batches_counter.inc()
         else:
             # optional heartbeat/log
             logging.debug("No events, sleeping %.1fs", POLL_INTERVAL)

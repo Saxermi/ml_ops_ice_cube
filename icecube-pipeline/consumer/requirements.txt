@@ -2,3 +2,4 @@
 
 redis==6.1.0
 requests==2.31.0
+prometheus_client

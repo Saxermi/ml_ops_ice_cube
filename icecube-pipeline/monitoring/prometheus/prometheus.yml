@@ -5,4 +5,10 @@ scrape_configs:
   - job_name: 'emitter'
     static_configs:
       - targets: ['cube:8000']
-
+  - job_name: 'consumer'
+    static_configs:
+      - targets: ['consumer:8001']
+  - job_name: 'model-server'
+    static_configs:
+      - targets: ['model-server:8002']
+      
