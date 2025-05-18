@@ -25,6 +25,7 @@ start_http_server(8001)
 heartbeat_counter = Counter("consumer_heartbeat_total", "Heartbeat from consumer")
 batches_counter = Counter("consumer_batches_total", "Number of event batches processed")
 
+
 def process_event(raw):
     """
     raw is the JSON-encoded dict you originally pushed:
@@ -39,9 +40,8 @@ def process_event(raw):
     try:
         payload = pickle.loads(raw)
     except (pickle.UnpicklingError, Exception) as e:
-            logging.error("Failed to unpickle event: %s", e)
-            return
-
+        logging.error("Failed to unpickle event: %s", e)
+        return
 
     event_id = payload.get("event_id", "<no-id>")
     logging.info("Sending event %s to model server", event_id)
