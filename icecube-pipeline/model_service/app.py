@@ -19,6 +19,8 @@ DEPTH = 6
 N_HEADS = 8
 FEAT_DIM = 6  # time, charge, auxiliary, x, y, z
 
+MODEL_PATH = "iceformer_best.pth"
+
 
 class HitEncoder(nn.Module):
     def __init__(self, in_dim=FEAT_DIM, d_model=D_MODEL):
@@ -92,7 +94,7 @@ sensor_geometry = pd.read_csv("sensor_geometry.csv")[["x", "y", "z"]].to_numpy(
     np.float32
 )
 model = IceCubeNet().to(DEVICE)
-ckpt = torch.load("iceformer_best.pth", map_location=DEVICE)
+ckpt = torch.load(MODEL_PATH, map_location=DEVICE)
 model.load_state_dict(ckpt["model_state_dict"])
 model.eval()
 collate_fn = SequencePadCollate(device=DEVICE)
@@ -152,7 +154,12 @@ def predict():
             out = model(xpad, mask).cpu().numpy()
     az, ze = vec2angles(out)
 
-    response = {"event_id": event_id, "azimuth": float(az[0]), "zenith": float(ze[0])}
+    response = {
+        "event_id": event_id,
+        "azimuth": float(az[0]),
+        "zenith": float(ze[0]),
+        "model_version": MODEL_PATH,
+    }
     return jsonify(response)
 
 

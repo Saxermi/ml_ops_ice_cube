@@ -48,6 +48,7 @@ r = redis.Redis(host="redis", port=6379)
 mongo = MongoClient("mongodb://mongo:27017/")
 mdb = mongo["icecube_db"]
 events_collection = mdb["events"]
+predictions = mdb["predictions"]
 
 # Prometheus: Start metrics endpoint and define heartbeat counter
 start_http_server(8000)  # This exposes metrics at http://localhost:8000/metrics

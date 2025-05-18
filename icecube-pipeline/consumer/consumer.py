@@ -14,16 +14,19 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 MODEL_SERVER_URL = os.getenv("MODEL_SERVER_URL", "http://model-server:5000/predict")
 EVENT_QUEUE = os.getenv("EVENT_QUEUE", "events")
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))  # seconds
-MONGO_URL = os.getenv("MONGO_URL", "mongodb://mongo:27017/")
 
 # ——— Setup logging & Redis client ————————————————
 logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO)
 r = redis.from_url(REDIS_URL)
 
 # ——— Setup MongoDB client —————————————————————————
-mongo = MongoClient(MONGO_URL)
-db = mongo["icecube_db"]
-predictions = db["predictions"]
+try:
+    mongo = MongoClient("mongodb://mongo:27017/")
+    db = mongo["icecube_db"]
+    predictions = db["predictions"]
+except:
+    logging.info("mongodb failed in consumer")
+
 
 # Start Prometheus metrics server on port 8001
 start_http_server(8001)
@@ -62,6 +65,7 @@ def process_event(raw):
 
         azimuth = result.get("azimuth")
         zenith = result.get("zenith")
+        model_version = result.get("model_version")
 
         if azimuth is not None:
             azimuth_gauge.set(azimuth)
@@ -80,9 +84,11 @@ def process_event(raw):
             "event_id": event_id,
             "azimuth": azimuth,
             "zenith": zenith,
-            "timestamp": time.time(),
+            "timestamp": int(time.time()),
             "model_url": MODEL_SERVER_URL,
+            "model_version": model_version,
         }
+        logging.info(doc)
 
         predictions.insert_one(doc)
 
