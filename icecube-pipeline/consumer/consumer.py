@@ -7,16 +7,23 @@ import pickle
 import redis
 import requests
 from prometheus_client import start_http_server, Counter, Gauge
+from pymongo import MongoClient
 
 # ——— Configuration via env vars ——————————————————————
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 MODEL_SERVER_URL = os.getenv("MODEL_SERVER_URL", "http://model-server:5000/predict")
 EVENT_QUEUE = os.getenv("EVENT_QUEUE", "events")
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "0.5"))  # seconds
+MONGO_URL = os.getenv("MONGO_URL", "mongodb://mongo:27017/")
 
 # ——— Setup logging & Redis client ————————————————
 logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO)
 r = redis.from_url(REDIS_URL)
+
+# ——— Setup MongoDB client —————————————————————————
+mongo = MongoClient(MONGO_URL)
+db = mongo["icecube_db"]
+predictions = db["predictions"]
 
 # Start Prometheus metrics server on port 8001
 start_http_server(8001)
@@ -27,7 +34,6 @@ batches_counter = Counter("consumer_batches_total", "Number of event batches pro
 
 azimuth_gauge = Gauge("last_prediction_azimuth", "Latest predicted azimuth")
 zenith_gauge = Gauge("last_prediction_zenith", "Latest predicted zenith")
-
 
 def process_event(raw):
     """
@@ -67,9 +73,20 @@ def process_event(raw):
             azimuth,
             zenith,
         )
+
+        # --- MoongoDB Logging ------------------------------------
+        doc = {
+            "event_id": event_id,
+            "azimuth": azimuth,
+            "zenith": zenith,
+            "timestamp": time.time(),
+            "model_url": MODEL_SERVER_URL,
+        }
+
+        predictions.insert_one(doc)
+
     except Exception as e:
         logging.error("Error processing %s: %s", event_id, e)
-
 
 def main():
     logging.info("Consumer started, connecting to %s", REDIS_URL)
