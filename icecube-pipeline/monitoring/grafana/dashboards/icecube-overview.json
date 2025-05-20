@@ -167,6 +167,47 @@
         "overrides": []
       },
       "gridPos": { "x": 6, "y": 27, "w": 12, "h": 9 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latest Azimuth Prediction",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "last_prediction_azimuth",
+          "refId": "A",
+          "legendFormat": "Azimuth"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 0, "y": 36, "w": 12, "h": 9 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Latest Zenith Prediction",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "last_prediction_zenith",
+          "refId": "A",
+          "legendFormat": "Zenith"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": []
+      },
+      "gridPos": { "x": 12, "y": 36, "w": 12, "h": 9 }
     }
   ]
 }
+
