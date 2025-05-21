@@ -4,8 +4,7 @@ on:
   push:           # update yourself when code changes
     branches: [ main ]
   pull_request:   # show any drift in PRs (does not push)
-  schedule:       # weekly safety-net
-    - cron: '0 3 * * 1'   # 03:00 UTC every Monday
+
 
 permissions:      # required to push back
   contents: write
