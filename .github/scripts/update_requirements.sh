@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-# Find every tracked requirements.txt and deduplicate directory names
 mapfile -t DIRS < <(
   git ls-files | grep -E '/requirements\.txt$' | xargs -n1 dirname | sort -u
 )
@@ -14,9 +13,13 @@ for dir in "${DIRS[@]}"; do
   echo "▶ Updating ${dir}/requirements.txt"
   pushd "${dir}" >/dev/null
 
-  # --ignore-none avoids aborting if a directory has no *.py files (e.g. pure config)
-  # --without-referenced makes the file shorter by skipping unused deps; drop if unwanted
-  pigar -p requirements.txt -u --ignore-none --without-referenced
-
+  # ▼ New CLI -------------------------------------------------------------
+  pigar generate \
+        -f requirements.txt \
+        --question-answer yes \
+        --auto-select \
+        --dont-show-differences
+  # -----------------------------------------------------------------------
   popd >/dev/null
 done
+
