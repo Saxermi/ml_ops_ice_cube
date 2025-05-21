@@ -1,104 +1,69 @@
-# ICECUBE Pipeline
+# IceCube ML Ops Pipeline – Quick Start
 
-The ICECUBE Pipeline is a modular, microservices-based system designed to process and analyze data from raw datasets in a distributed environment. This project is developed as part of an ML Ops course and focuses on the operations and infrastructure required to support production-grade machine learning pipelines—not on the intricacies of the model itself. Its design and inspiration are drawn from the [Kaggle IceCube Neutrinos in Deep Ice competition](https://www.kaggle.com/competitions/icecube-neutrinos-in-deep-ice/data?select=test).
+> **Repo:** [https://github.com/Saxermi/ml\_ops\_ice\_cube](https://github.com/Saxermi/ml_ops_ice_cube)
 
----
-
-## Table of Contents
-
-- [Overview](#overview)
-
-- [Components](#components)
-  - [Emitter Service](#emitter-service)
-  - [Redis Message Broker](#redis-message-broker)
-  - [Consumer Service](#consumer-service)
-  - [Model Service](#model-service)
-  - [Monitoring Stack](#monitoring-stack)
-  - [Shared Utilities](#shared-utilities)
-- [Setup and Deployment](#setup-and-deployment)
-- [Usage](#usage)
-- [Extending the Project](#extending-the-project)
-- [Contributing](#contributing)
-- [License](#license)
+This repository contains the microservice‑based ML Ops pipeline we built around the [IceCube *Neutrinos‑in‑Deep‑Ice* challenge](https://www.kaggle.com/competitions/icecube-neutrinos-in-deep-ice). The focus is on data ops, orchestration and observability rather than the model’s internal architecture.
 
 ---
 
-## Overview
+## Repository structure
 
-The ICECUBE Pipeline processes raw data from the IceCube dataset by distributing the workload across specialized containers. The project is intended for an ML Ops course and is designed to teach and demonstrate the deployment and operational best practices that support machine learning models in production. The focus here is on ensuring robust data ingestion, effective container orchestration, and thorough monitoring, rather than on optimizing the model's performance.
-
-The pipeline is divided mainly into two segments:
-
-- **Laptop 1 (Data Emitter):** Handles data ingestion and pre-processing using an emitter service that batches and serializes events. It then pushes these batches to a Redis queue while maintaining system health via heartbeat signals.
-- **Laptop 2 (Processing + Model + Monitoring):** Processes incoming messages with a consumer service that preprocesses data and then calls a model for inference via a RESTful API. In addition, this machine hosts tools for logging, health checking, and monitoring through MLflow, Prometheus, and Grafana.
-
-The architecture is inspired by the Kaggle [IceCube Neutrinos in Deep Ice competition](https://www.kaggle.com/competitions/icecube-neutrinos-in-deep-ice/data?select=test), leveraging a real-world dataset to simulate end-to-end ML pipeline operations.
-
----
-
----
-
-## Components
-
-### Emitter Service
-- **Location:** `emitter/`
-- **Files:**
-  - `Dockerfile` – Containerizes the emitter.
-  - `emitter.py` – Handles data batching, serialization, and pushing events into the Redis queue.
-  - `config.yaml` – Holds configuration settings for the emitter service.
-- **Responsibilities:**
-  - Read raw IceCube dataset.
-  - Batch events and serialize data.
-  - Push serialized batches to the Redis container.
-  - Send periodic heartbeats to ensure system health.
-
-### Redis Message Broker
-- **Role:** Acts as a transient storage to queue serialized event batches.
-- **Deployment:** Runs as a container (or service) that the emitter and consumer containers connect to.
-- **Functionality:**
-  - Stores event batches until they are consumed by the processing pipeline.
-
-### Consumer Service
-- **Location:** `consumer/`
-- **Files:**
-  - `Dockerfile` – Containerizes the consumer.
-  - `consumer.py` – Retrieves and processes data from the Redis queue.
-  - `preprocess.py` – Contains routines to preprocess data before model inference.
-- **Responsibilities:**
-  - Pop events from the Redis queue.
-  - Preprocess events using `preprocess.py`.
-  - Forward processed events to the Model Server Container for inference.
-  - Log inference activity and send heartbeats.
-
-### Model Service
-- **Location:** `model_service/`
-- **Files:**
-  - `Dockerfile` – Containerizes the model service.
-  - `app.py` – Implements a RESTful API to serve model predictions.
-  - `model.pkl` – Serialized machine learning model used for inference.
-- **Responsibilities:**
-  - Expose an endpoint (`/predict`) to handle inference requests.
-  - Provide a health check endpoint (`/health`).
-  - Send heartbeats to ensure service availability.
-
-### Monitoring Stack
-- **Location:** `monitoring/`
-- **Components:**
-  - **Prometheus:** Configured via `prometheus/prometheus.yml` for scraping `/metrics` endpoints from the containers.
-  - **Grafana:** Visualizes metrics including heartbeat status, throughput, and latency, and triggers alerts as needed.
-  - **MLflow:** Tracks inference performance and logs detailed model prediction activities.
-- **Responsibilities:**
-  - Enable real-time monitoring and alerting for system components.
-  - Provide visualization dashboards to assist with diagnostics and performance tuning.
-
-### Shared Utilities
-- **Location:** `shared/`
-- **Files:**
-  - `utils.py` – Contains helper functions used across multiple services.
-  - `heartbeats.py` – Handles sending and monitoring heartbeat signals.
-  - `common.py` – Stores common configuration and methods that can be reused across services.
+```text
+.
+├── icecube-pipeline/      # All runtime services (each a Docker context)
+│   ├── emitter/           # Streams raw events ➜ Redis
+│   ├── consumer/          # Feature engineering ➜ Mongo
+│   ├── model_service/     # FastAPI inference API
+│   ├── monitoring/        # Prometheus & Grafana configs
+│   ├── shared/            # Config & helper modules
+│   └── docker-compose.yml # Orchestrates the stack locally
+├── data_samples/          # Tiny slices of the dataset for smoke‑tests
+├── input/                 # Full Kaggle download (raw parquet – large)
+├── archive/               # Notebooks & exploratory experiments
+├── setup.bsh              # Convenience script to pull data & build images
+└── README.md              # Project overview (this file)
+```
 
 ---
 
-## Setup and Deployment
-tbd
+## Running the stack
+
+### Option A – Docker Compose (recommended)
+
+```bash
+# clone the repo
+git clone https://github.com/Saxermi/ml_ops_ice_cube.git
+cd ml_ops_ice_cube/icecube-pipeline
+
+# build & launch all services (Redis, Mongo, emitter, consumer, model, monitoring)
+docker compose up --build
+```
+
+The compose file brings up:
+
+| Service                 | Directory        | Role                                   |
+| ----------------------- | ---------------- | -------------------------------------- |
+| `emitter`               | `emitter/`       | Reads IceCube parquet, batches ➜ Redis |
+| `consumer`              | `consumer/`      | Pops from Redis, preprocess ➜ Mongo    |
+| `model-service`         | `model_service/` | Serves inference via REST              |
+| `redis`, `mongo`        | official images  | Message broker & storage               |
+| `prometheus`, `grafana` | `monitoring/`    | Metrics & dashboards                   |
+
+Once Grafana is up (default [http://localhost:3000](http://localhost:3000), creds **admin/admin**), import the supplied dashboard JSON in `monitoring/grafana/dashboards/` to visualise throughput, latency and heartbeats.
+
+### Option B – Use the pre‑built images
+
+If you’d rather pull instead of build:
+
+```bash
+docker pull ghcr.io/<org>/icecube-emitter:latest
+docker pull ghcr.io/<org>/icecube-consumer:latest
+docker pull ghcr.io/<org>/icecube-model-service:latest
+```
+
+Make sure every container shares the same network and sees the correct environment variables (e.g. `REDIS_HOST`, `MONGO_URI`, `MODEL_PATH`). The Prometheus & Grafana images in `docker-compose.yml` work fine with the pulled services as long as they expose `/metrics`.
+
+---
+
+That’s it – spin it up, stream some (simulated) cosmic neutrinos, and have fun! \:rocket:
+
