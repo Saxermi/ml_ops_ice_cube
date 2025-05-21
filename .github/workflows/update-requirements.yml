@@ -1,0 +1,42 @@
+name: Update per-container requirements.txt
+
+on:
+  push:           # update yourself when code changes
+    branches: [ main ]
+  pull_request:   # show any drift in PRs (does not push)
+
+
+permissions:      # required to push back
+  contents: write
+  pull-requests: write
+
+jobs:
+  pigar-update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0      # needed so git can commit later
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install pigar
+      run: pip install --quiet --upgrade pigar
+
+    - name: Run pigar in each container
+      run: .github/scripts/update_requirements.sh
+
+    - name: Commit & push back (if anything changed)
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore: update per-container requirements.txt with pigar"
+        commit_author:  GitHub Action <actions@github.com>
+        push_options: '--follow-tags'
+      env:
+        # The action uses GITHUB_TOKEN by default; nothing to set here
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
