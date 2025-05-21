@@ -1,19 +1,11 @@
 name: Build & publish service images to GHCR
-
 on:
-  push:            # every branch push gets a SHA-tagged image
-    branches: [ '**' ]
-  workflow_dispatch:   # manual run button
-
-permissions:      # allow the job to write packages
-  contents: read
-  packages: write
+  push: { branches: [ '**' ] }
+permissions: { contents: read, packages: write }
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
-    # ───── build every service directory listed here ─────
     strategy:
       matrix:
         service: [ consumer, emitter, model_service ]
@@ -21,14 +13,19 @@ jobs:
 
     env:
       REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}   # e.g. org/repo
 
     steps:
     - name: Check out code
       uses: actions/checkout@v4
 
+    #   produce a lowercase repo path once and expose it as an output
+    - name: Canonical image namespace
+      id: vars
+      run: |
+        echo "image_base=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >>"$GITHUB_OUTPUT"
+
     - name: Log in to GHCR
-      uses: docker/login-action@v3          # ↑ official login helper :contentReference[oaicite:0]{index=0}
+      uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
         username:  ${{ github.actor }}
@@ -37,16 +34,17 @@ jobs:
     - name: Set up Buildx
       uses: docker/setup-buildx-action@v3
 
+    #  use that output everywhere you need the repo name
     - name: Build & push ${{ matrix.service }}
-      id: build-push
-      uses: docker/build-push-action@v5     # ↑ BuildKit-powered builder :contentReference[oaicite:1]{index=1}
+      uses: docker/build-push-action@v5
       with:
         context: ./icecube-pipeline/${{ matrix.service }}
         push: true
         tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:${{ github.sha }}
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}:latest
+          ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_base }}/${{ matrix.service }}:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_base }}/${{ matrix.service }}:latest
         labels: |
           org.opencontainers.image.source=${{ github.repositoryUrl }}
           org.opencontainers.image.revision=${{ github.sha }}
-        provenance: false        # speeds things up if you don’t need SBOMs yet
+        provenance: false
+
