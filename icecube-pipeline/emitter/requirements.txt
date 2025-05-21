@@ -3,4 +3,7 @@
 pandas==2.2.3
 prometheus-client==0.22.0
 pymongo==4.13.0
-redis==6.1.0
+redis
+pyarrow           
+
+
